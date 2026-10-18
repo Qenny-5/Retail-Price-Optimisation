@@ -197,7 +197,10 @@ elif page == '📈 Demand Forecast':
                 forecast_df = pd.read_csv('all_forecasts.csv')
                 
             forecast_df['ds'] = pd.to_datetime(forecast_df['ds'])
-            forecast = forecast_df[forecast_df['Category'] == forecast_cat]
+            
+            # Handle column name variations (Category vs category)
+            cat_col = 'Category' if 'Category' in forecast_df.columns else 'category'
+            forecast = forecast_df[forecast_df[cat_col].astype(str).str.strip() == str(forecast_cat).strip()]
 
         # Plot
         fig = go.Figure()
