@@ -4,7 +4,7 @@
 Indian e-commerce companies frequently lose revenue through suboptimal pricing strategies and inventory mismatches. This platform processes **1.1 million transaction records** spanning 20+ Indian cities and multiple product categories to optimize pricing, forecast demand, and provide real-time economic context.
 
 ## 🚀 Live Dashboard
-[→ Open Live Platform](https://your-streamlit-url.streamlit.app) *(Replace with your deployed Streamlit URL)*
+[→ Open Live Platform](https://retail-price-optimisation-ambihzgjduyjfjtq4cksna.streamlit.app) 
 
 ---
 
