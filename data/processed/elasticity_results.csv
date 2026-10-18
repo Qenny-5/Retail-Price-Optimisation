@@ -1,0 +1,10 @@
+category,elasticity,r_squared,p_value,interpretation,avg_price,data_points
+Electronics,0.133,0.01,0.2494,Inelastic — consumers not price-sensitive,30409.77,137
+Home & Living,-0.155,0.003,0.5407,Inelastic — consumers not price-sensitive,1850.9,137
+Home Appliances,-0.347,0.015,0.1479,Inelastic — consumers not price-sensitive,4873.77,137
+Footwear,0.283,0.024,0.071,Inelastic — consumers not price-sensitive,2550.05,137
+Furniture,0.213,0.005,0.3954,Inelastic — consumers not price-sensitive,8758.55,137
+Accessories,0.082,0.001,0.6695,Inelastic — consumers not price-sensitive,1573.56,137
+Books,-0.169,0.004,0.4695,Inelastic — consumers not price-sensitive,674.94,137
+Kitchen,0.195,0.004,0.4766,Inelastic — consumers not price-sensitive,3102.23,137
+Clothing,-0.036,0.0,0.8396,Inelastic — consumers not price-sensitive,2102.61,137
