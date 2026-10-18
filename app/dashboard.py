@@ -16,10 +16,8 @@ st.set_page_config(
 # ── Load data ──────────────────────────────────────────────────
 @st.cache_data(ttl=3600)  # refresh every hour
 def load_data():
-    # Replace this string with your public dataset URL (e.g., S3 link, raw GitHub URL, etc.)
     PUBLIC_DATA_URL = 'https://raw.githubusercontent.com/Qenny-5/Retail-Price-Optimisation/main/data/processed/sample_data.csv'
     
-    # Use the public URL directly inside read_csv
     df = pd.read_csv(PUBLIC_DATA_URL)
     df['Date']    = pd.to_datetime(df['Date'])
     df['Revenue'] = df['Quantity'] * df['Price']
@@ -39,6 +37,23 @@ def get_live_usd_inr():
         pass
     return None
 
+@st.cache_data(ttl=1800)  # refresh every 30 min
+def get_live_weather(city):
+    """Fetch real-time weather using OpenWeatherMap API and Streamlit Secrets"""
+    try:
+        api_key = st.secrets["WEATHER_API_KEY"]
+        url = 'http://api.openweathermap.org/data/2.5/weather'
+        params = {'q': f'{city},IN', 'appid': api_key, 'units': 'metric'}
+        response = requests.get(url, params=params, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            temp = data['main']['temp']
+            condition = data['weather'][0]['main']
+            return f"{temp}°C, {condition}"
+    except Exception:
+        pass
+    return "Data unavailable"
+
 df = load_data()
 
 # ── Sidebar navigation ────────────────────────────────────────
@@ -57,6 +72,14 @@ usd_inr = get_live_usd_inr()
 if usd_inr:
     st.sidebar.metric('USD/INR Rate', f'₹{usd_inr:.2f}',
                        delta='Live')
+
+# Live Weather Widget
+st.sidebar.markdown('---')
+st.sidebar.markdown('**Live City Weather (Demand Driver)**')
+selected_weather_city = st.sidebar.selectbox('Check Weather for City', ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai'])
+weather_info = get_live_weather(selected_weather_city)
+st.sidebar.info(f'{selected_weather_city}: {weather_info}')
+
 st.sidebar.caption(
     f'Last updated: {datetime.now().strftime("%H:%M")}')
 
@@ -241,7 +264,6 @@ elif page == '💰 Price Optimisation':
                       ['Price'].mean()))
 
     if st.button('Calculate Optimal Price', type='primary'):
-        # Quick elasticity calculation
         cat_df  = df[df['Category'] == opt_category].copy()
         weekly  = cat_df.groupby(
             pd.Grouper(key='Date', freq='W')
@@ -309,7 +331,6 @@ elif page == '💰 Price Optimisation':
 elif page == '🏙️ City Intelligence':
     st.title('🏙️ City-Level Market Intelligence')
 
-    # City tier performance
     tier_map = {
         'Mumbai': 'Tier 1', 'Delhi': 'Tier 1',
         'Bangalore': 'Tier 1', 'Hyderabad': 'Tier 1',
@@ -355,7 +376,6 @@ elif page == '🏙️ City Intelligence':
     heatmap_data = (df[df['City'].isin(top_cities)]
                     .groupby(['City', 'Category'])['Revenue']
                     .sum().unstack(fill_value=0))
-    # Normalise to percentage
     heatmap_pct = heatmap_data.div(
         heatmap_data.sum(axis=1), axis=0) * 100
 
