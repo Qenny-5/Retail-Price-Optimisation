@@ -115,7 +115,6 @@ if page == '📊 Overview':
     st.caption(f'Showing data for {selected_year} | '
                f'{len(filtered):,} transactions')
 
-    # KPI row
     col1, col2, col3, col4 = st.columns(4)
     col1.metric('Total Revenue',
                 f'₹{filtered["Revenue"].sum()/1e7:.1f} Cr')
@@ -129,7 +128,6 @@ if page == '📊 Overview':
     st.markdown('---')
     col1, col2 = st.columns(2)
 
-    # Revenue by category
     with col1:
         cat_rev = (filtered.groupby('Category')['Revenue']
                    .sum().sort_values(ascending=True)
@@ -142,7 +140,6 @@ if page == '📊 Overview':
         fig.update_layout(showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Monthly trend
     with col2:
         monthly = (filtered.groupby('Month')['Revenue']
                    .sum().reset_index())
@@ -154,7 +151,6 @@ if page == '📊 Overview':
         fig.update_traces(line_color='#E74C3C', line_width=3)
         st.plotly_chart(fig, use_container_width=True)
 
-    # City performance
     city_perf = (filtered.groupby('City').agg(
         Revenue=('Revenue', 'sum'),
         Orders=('Quantity', 'count'),
@@ -170,11 +166,10 @@ if page == '📊 Overview':
         use_container_width=True
     )
 
-# ── PAGE 2: DEMAND FORECAST ───────────────────────────────────
+# ── PAGE 2: DEMAND FORECAST (Using Pre-computed CSV) ──────────
 elif page == '📈 Demand Forecast':
     st.title('📈 Demand Forecasting Engine')
-    st.caption('Prophet time-series model with Indian festival '
-               'seasonality')
+    st.caption('Pre-trained time-series forecast with Indian festival seasonality')
 
     forecast_cat = st.selectbox(
         'Select Category to Forecast',
@@ -184,9 +179,7 @@ elif page == '📈 Demand Forecast':
         'Forecast Horizon (weeks)', 4, 52, 26)
 
     if st.button('Generate Forecast', type='primary'):
-        with st.spinner(f'Training Prophet model for '
-                        f'{forecast_cat}...'):
-            from prophet import Prophet
+        with st.spinner(f'Loading forecast model results for {forecast_cat}...'):
             import warnings
             warnings.filterwarnings('ignore')
 
@@ -197,25 +190,14 @@ elif page == '📈 Demand Forecast':
             cat_data.columns = ['ds', 'y']
             cat_data = cat_data[cat_data['y'] > 0]
 
-            # Add Diwali
-            diwali = pd.DataFrame({
-                'holiday': 'Diwali',
-                'ds': pd.to_datetime([
-                    '2024-11-01', '2025-10-20', '2026-11-08']),
-                'lower_window': -7, 'upper_window': 3
-            })
-
-            model = Prophet(
-                holidays=diwali,
-                yearly_seasonality=True,
-                weekly_seasonality=True,
-                interval_width=0.95
-            )
-            model.fit(cat_data)
-
-            future   = model.make_future_dataframe(
-                periods=forecast_weeks, freq='W')
-            forecast = model.predict(future)
+            # Load pre-computed forecast from processed folder
+            try:
+                forecast_df = pd.read_csv('data/processed/all_forecasts.csv')
+            except Exception:
+                forecast_df = pd.read_csv('all_forecasts.csv')
+                
+            forecast_df['ds'] = pd.to_datetime(forecast_df['ds'])
+            forecast = forecast_df[forecast_df['Category'] == forecast_cat]
 
         # Plot
         fig = go.Figure()
@@ -280,7 +262,6 @@ elif page == '💰 Price Optimisation':
         result = sm.OLS(weekly['log_quantity'], X).fit()
         elasticity = result.params['log_price']
 
-        # Price optimisation
         price_range  = np.linspace(
             current_price * 0.7, current_price * 1.3, 61)
         revenues     = []
@@ -300,7 +281,6 @@ elif page == '💰 Price Optimisation':
                          / (current_price * baseline_qty)
                          * 100)
 
-        # Display results
         c1, c2, c3 = st.columns(3)
         c1.metric('Current Price', f'₹{current_price:,.0f}')
         c2.metric('Optimal Price',
@@ -312,7 +292,6 @@ elif page == '💰 Price Optimisation':
         st.info(f'**Price Elasticity:** {elasticity:.3f} — '
                 f'{"Elastic (price sensitive)" if abs(elasticity)>1 else "Inelastic (price insensitive)"}')
 
-        # Revenue curve
         fig = px.line(
             x=price_range, y=revenues,
             labels={'x': 'Price (₹)', 'y': 'Projected Revenue'},
@@ -369,7 +348,6 @@ elif page == '🏙️ City Intelligence':
             xaxis_tickangle=45, showlegend=False)
         st.plotly_chart(fig, use_container_width=True)
 
-    # Category preference by city
     st.subheader('Category Preference Heatmap by City')
     top_cities = (df.groupby('City')['Revenue']
                   .sum().nlargest(10).index)
